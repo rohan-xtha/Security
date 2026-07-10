@@ -9,12 +9,24 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const match = document.cookie.match(/auth-storage=([^;]*)/);
-    if (match) {
-      const stored = JSON.parse(decodeURIComponent(match[1]));
-      if (stored?.state?.token) {
-        config.headers.Authorization = `Bearer ${stored.state.token}`;
+    try {
+      const cookies = document.cookie.split(';');
+      let cookieValue: string | null = null;
+      for (const cookie of cookies) {
+        const [key, ...rest] = cookie.split('=');
+        if (key.trim() === 'auth-storage') {
+          cookieValue = rest.join('=');
+          break;
+        }
       }
+      if (cookieValue) {
+        const stored = JSON.parse(decodeURIComponent(cookieValue));
+        if (stored?.state?.token) {
+          config.headers.Authorization = `Bearer ${stored.state.token}`;
+        }
+      }
+    } catch {
+      // malformed cookie — skip auth header
     }
   }
   return config;

@@ -1,4 +1,3 @@
-const COOKIE_NAME = 'auth-storage';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
 function setCookie(name: string, value: string, maxAge: number) {
@@ -8,8 +7,14 @@ function setCookie(name: string, value: string, maxAge: number) {
 
 function getCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
-  const match = document.cookie.match(new RegExp(`${name}=([^;]*)`));
-  return match ? decodeURIComponent(match[1]) : null;
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [key, ...rest] = cookie.split('=');
+    if (key.trim() === name) {
+      return decodeURIComponent(rest.join('='));
+    }
+  }
+  return null;
 }
 
 function removeCookie(name: string) {
@@ -28,12 +33,16 @@ export const cookieStorage: Storage = {
     removeCookie(key);
   },
   get length() {
-    return 0;
+    return document.cookie.split(';').filter(Boolean).length;
   },
   clear(): void {
-    removeCookie(COOKIE_NAME);
+    document.cookie.split(';').forEach((cookie) => {
+      const name = cookie.split('=')[0].trim();
+      removeCookie(name);
+    });
   },
-  key(_index: number): string | null {
-    return null;
+  key(index: number): string | null {
+    const cookies = document.cookie.split(';');
+    return cookies[index]?.split('=')[0].trim() ?? null;
   },
 };
